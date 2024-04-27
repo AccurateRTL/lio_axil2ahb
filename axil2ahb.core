@@ -1,0 +1,48 @@
+CAPI=2:
+# Copyright AccurateRTL contributors.
+# Licensed under the MIT License, see LICENSE for details.
+# SPDX-License-Identifier: MIT
+
+name: '::axil2ahb:'
+filesets:
+  files_rtl:
+    file_type: systemVerilogSource
+    files:
+    - hw/rtl/axil2ahb.sv
+    depend:
+    - '::lio_ifc:'
+
+  py_tb:
+    files:
+      - hw/dv/cocotb/axil2ahb_test.py
+    file_type: user
+
+
+scripts:
+  scr: 
+    cmd: [$(eval export PYTHONPATH = $(shell pwd)/../../../hw/ip/axil2ahb/hw/dv/cocotb:$PYTHONPATH)]
+
+targets:
+  default:
+    filesets:
+    - files_rtl
+
+  simulation:
+    filesets:
+    - files_rtl
+
+  sim_cocotb:
+    hooks:
+      pre_build: [scr]
+    filesets: [files_rtl, py_tb]
+    toplevel: top
+    flow: sim
+    flow_options:
+        tool: icarus
+        cocotb_module: axil2ahb_test
+        iverilog_options:
+          - -g2012 -o hw_model
+        vlog_options:
+          - -timescale=1ns/1ns 
+        vvp_options:
+          - -M /usr/local/lib64/python3.8/site-packages/cocotb/libs -m libcocotbvpi_icarus  hw_model -fst

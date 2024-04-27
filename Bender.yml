@@ -1,0 +1,15 @@
+# Copyright AccurateRTL contributors.
+# Licensed under the MIT License, see LICENSE for details.
+# SPDX-License-Identifier: MIT
+
+package:
+  name: axil2ahb
+
+sources:
+  - hw/rtl/axil2ahb.sv  
+  
+  # TB sources
+  - target: any(test,simulation)
+    files:
+
+   
