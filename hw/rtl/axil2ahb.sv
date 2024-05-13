@@ -1,3 +1,7 @@
+// Copyright AccurateRTL contributors.
+// Licensed under the MIT License, see LICENSE for details.
+// SPDX-License-Identifier: MIT
+
 module axil2ahb #( 
   parameter AWIDTH = 16, 
   parameter DWIDTH = 32,
