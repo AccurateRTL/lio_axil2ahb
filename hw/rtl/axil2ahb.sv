@@ -1,22 +1,14 @@
-/*
-Copyright (c) 2024 AccurateRTL contributors
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-SPDX-License-Identifier: MIT
-*/
-
-module axil2ahb #( parameter AWIDTH = 16, DWIDTH = 32)
+module axil2ahb #( 
+  parameter AWIDTH = 16, 
+  parameter DWIDTH = 32,
+  parameter SIZE_SEL_ADDR_BITS = 0   // 0 - чтение только по 4 байта  2 - использование окон для выбора размера чтения
+)
 (
   input   clk,
   input   rst_n,
   output  rst,
   
-  input        [AWIDTH-1:0]     axil_awaddr,
+  input        [AWIDTH+SIZE_SEL_ADDR_BITS-1:0]   axil_awaddr,
   input        [2:0]            axil_awprot,
   input                         axil_awvalid,
   output logic                  axil_awready,
@@ -27,7 +19,7 @@ module axil2ahb #( parameter AWIDTH = 16, DWIDTH = 32)
   output logic [1:0]            axil_bresp,
   output logic                  axil_bvalid,
   input                         axil_bready,
-  input        [AWIDTH-1:0]     axil_araddr,
+  input        [AWIDTH+SIZE_SEL_ADDR_BITS-1:0]   axil_araddr,
   input [2:0]                   axil_arprot,
   input                         axil_arvalid,
   output logic                  axil_arready,
@@ -42,8 +34,7 @@ module axil2ahb #( parameter AWIDTH = 16, DWIDTH = 32)
   output logic                  hwrite,   
   output logic  [1:0]           htrans,   
   output logic  [2:0]           hsize,    
-  input                         hready,   
-                        
+  input                         hready,                           
   input       [DWIDTH-1:0]      hrdata,  
   input        [1:0]            hresp    
 );
@@ -93,6 +84,7 @@ always_ff @(posedge clk or negedge rst_n) begin
     axil_wready  <= 1'b0;
     axil_bvalid  <= 1'b0;
     axil_rvalid  <= 1'b0;
+    hsize        <= 3'b010;
   end
   else begin
     case (stt)
@@ -110,6 +102,10 @@ always_ff @(posedge clk or negedge rst_n) begin
             haddr        <= axil_araddr;
             hwrite       <= 1'b0;
             hsel         <= 1'b1;
+            if ((SIZE_SEL_ADDR_BITS==2) && (axil_araddr[AWIDTH+SIZE_SEL_ADDR_BITS-1:AWIDTH]<3))
+              hsize        <= axil_araddr[AWIDTH+SIZE_SEL_ADDR_BITS-1:AWIDTH];
+            else
+              hsize        <= 3'b010;
           end
         end  
       end
@@ -119,7 +115,18 @@ always_ff @(posedge clk or negedge rst_n) begin
           hwdata       <= axil_wdata;
           axil_wready  <= 1'b0;
           hsel         <= 1'b1;
-          stt     <= REQUESTING_AHB_WRITE;
+          if (axil_wstrb==4'hf)
+            hsize   <= 3'b010;
+          else
+            if ((axil_wstrb==4'h3) || (axil_wstrb==4'hC))
+              hsize   <= 3'b001;
+            else
+              if ((axil_wstrb==4'h1) || (axil_wstrb==4'h2) || (axil_wstrb==4'h4) || (axil_wstrb==4'h8))
+                hsize   <= 3'b000;
+              else
+                hsize   <= 3'b010;
+                
+          stt <= REQUESTING_AHB_WRITE;
         end
       end
             
@@ -173,21 +180,13 @@ always_ff @(posedge clk or negedge rst_n) begin
 end
 
 
-// assign haddr   = '0;
-
-// assign hsel    = '0;
-// assign hwrite  = '0;
 assign htrans  = 2'b10;   //NONSEQ
-assign hsize   = 3'b010;  //32b
 
 assign axil_bresp    = '0;
-//assign axil_bvalid   = stt==WRITING_AHB_DATA;
-
-// assign axil_rdata    = '0;
 assign axil_rresp    = '0;
-// assign axil_rvalid   = '0;
 
 assign rst = ~rst_n;
+
 endmodule
 
 

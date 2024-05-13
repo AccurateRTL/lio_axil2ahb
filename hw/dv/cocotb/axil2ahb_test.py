@@ -2,7 +2,6 @@
 # Licensed under the MIT License, see LICENSE for details.
 # SPDX-License-Identifier: MIT
 
-# test_my_design.py (extended)
 
 import logging
 import random
