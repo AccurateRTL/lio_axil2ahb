@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 package:
-  name: axil2ahb
+  name: lio_axil2ahb
 
 sources:
   - hw/rtl/axil2ahb.sv  
