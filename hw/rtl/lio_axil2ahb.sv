@@ -2,7 +2,9 @@
 // Licensed under the MIT License, see LICENSE for details.
 // SPDX-License-Identifier: MIT
 
-module axil2ahb #( 
+`timescale 1ps / 1ps
+
+module lio_axil2ahb #( 
   parameter AWIDTH = 16, 
   parameter DWIDTH = 32,
   parameter SIZE_SEL_ADDR_BITS = 0   // 0 - чтение только по 4 байта  2 - использование окон для выбора размера чтения
@@ -97,7 +99,7 @@ always_ff @(posedge clk or negedge rst_n) begin
           stt          <= WAITING_AXIL_WDATA;
           axil_wready  <= 1'b1;
           haddr        <= axil_awaddr;
-          hwrite       <= 1'b1;
+          hwrite       <= 1'b0;
           hsel         <= 1'b0;
         end
         else begin
@@ -106,8 +108,11 @@ always_ff @(posedge clk or negedge rst_n) begin
             haddr        <= axil_araddr;
             hwrite       <= 1'b0;
             hsel         <= 1'b1;
-            if ((SIZE_SEL_ADDR_BITS==2) && (axil_araddr[AWIDTH+SIZE_SEL_ADDR_BITS-1:AWIDTH]<3))
-              hsize        <= axil_araddr[AWIDTH+SIZE_SEL_ADDR_BITS-1:AWIDTH];
+            if (SIZE_SEL_ADDR_BITS==2) 
+              if (axil_araddr[AWIDTH+SIZE_SEL_ADDR_BITS-1:AWIDTH]<3)
+                hsize        <= axil_araddr[AWIDTH+SIZE_SEL_ADDR_BITS-1:AWIDTH];
+              else
+                hsize        <= 3'b010;
             else
               hsize        <= 3'b010;
           end
@@ -119,6 +124,7 @@ always_ff @(posedge clk or negedge rst_n) begin
           hwdata       <= axil_wdata;
           axil_wready  <= 1'b0;
           hsel         <= 1'b1;
+          hwrite       <= 1'b1;
           if (axil_wstrb==4'hf)
             hsize   <= 3'b010;
           else
@@ -135,13 +141,19 @@ always_ff @(posedge clk or negedge rst_n) begin
       end
             
       REQUESTING_AHB_WRITE: begin
-        if (hready)
+        if (hready) begin
+          hwrite       <= 1'b0;
+          hsel         <= 1'b0;
           stt <= WRITING_AHB_DATA;
+        end
       end
       
       REQUESTING_AHB_READ: begin
-        if (hready)
+        if (hready) begin
+          hwrite       <= 1'b0;
+          hsel         <= 1'b0;
           stt <= READING_AHB_DATA;
+        end  
       end
 
       WRITING_AHB_DATA: begin

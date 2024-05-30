@@ -3,25 +3,25 @@ CAPI=2:
 # Licensed under the MIT License, see LICENSE for details.
 # SPDX-License-Identifier: MIT
 
-name: '::axil2ahb:'
+name: '::lio_axil2ahb:'
 filesets:
   files_rtl:
     file_type: systemVerilogSource
     files:
-    - hw/rtl/axil2ahb.sv
-    depend:
-    - '::lio_ifc:'
+    - hw/rtl/lio_axil2ahb.sv
 
   py_tb:
     files:
-      - hw/dv/cocotb/axil2ahb_test.py
+      - hw/dv/cocotb/lio_axil2ahb_test.py
     file_type: user
 
-
 scripts:
-  scr: 
-    cmd: [$(eval export PYTHONPATH = $(shell pwd)/../../../hw/ip/axil2ahb/hw/dv/cocotb:$PYTHONPATH)]
+  set_python_path: 
+    cmd: [$(eval export PYTHONPATH = $(shell pwd)/../../../hw/ip/lio_axil2ahb/hw/dv/cocotb:$PYTHONPATH)]
 
+  create_dump_file: 
+    cmd: [echo -e "module iverilog_dump();\n initial begin \n \$$dumpfile(\"waves.fst\");\n    \$$dumpvars(0\u002c lio_axil2ahb);\n end\n endmodule" > iverilog_dump.v]
+   
 targets:
   default:
     filesets:
@@ -33,15 +33,15 @@ targets:
 
   sim_cocotb:
     hooks:
-      pre_build: [scr]
+      pre_build: [set_python_path, create_dump_file]
     filesets: [files_rtl, py_tb]
-    toplevel: top
+    toplevel: lio_axil2ahb
     flow: sim
     flow_options:
         tool: icarus
-        cocotb_module: axil2ahb_test
+        cocotb_module: lio_axil2ahb_test
         iverilog_options:
-          - -g2012 -o hw_model
+          - -siverilog_dump -g2012 -o hw_model iverilog_dump.v
         vlog_options:
           - -timescale=1ns/1ns 
         vvp_options:
