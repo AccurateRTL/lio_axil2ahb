@@ -72,13 +72,12 @@ async def read_write_test(dut, data_in=None, idle_inserter=None, backpressure_in
         rd_data = await tb.axil_master.read_dword(n*4)
         assert rd_data == n, "invalid data %x != %x!" % (rd_data, n) 
     else:
-       # Размеры обращений меньшие 4 не поддерживаются VIP AHB 
+       # Размеры обращений меньшие 4 не поддерживаются VIP AHB, нужно сперва переделать его 
+      '''
       for n in range(10):
         await tb.axil_master.write_byte((0<<int(dut.AWIDTH)) + n, n)
         rd_data = await tb.axil_master.read_byte((0<<int(dut.AWIDTH))+n)
         assert rd_data == n, "invalid byte data %x != %x!" % (rd_data, n) 
-
-      '''
       for n in range(10):
         await tb.axil_master.write_word((1<<int(dut.AWIDTH)) + n*2, n)
         rd_data = await tb.axil_master.read_dword((1<<int(dut.AWIDTH))+n*2)

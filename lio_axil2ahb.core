@@ -23,9 +23,10 @@ scripts:
     cmd: [echo -e "module iverilog_dump();\n initial begin \n \$$dumpfile(\"waves.fst\");\n    \$$dumpvars(0\u002c lio_axil2ahb);\n end\n endmodule" > iverilog_dump.v]
    
 targets:
-  default:
+  default: &default_target
     filesets:
     - files_rtl
+    toplevel: lio_axil2ahb
 
   simulation:
     filesets:
@@ -46,3 +47,15 @@ targets:
           - -timescale=1ns/1ns 
         vvp_options:
           - -M /usr/local/lib64/python3.8/site-packages/cocotb/libs -m libcocotbvpi_icarus  hw_model -fst
+
+  lint:
+    <<: *default_target
+    default_tool: verilator
+    tools:
+      verilator:
+        mode: lint-only
+        verilator_options:
+          - "-Wall"
+      veriblelint:
+        rules:
+          - "-no-trailing-spaces"
